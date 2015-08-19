@@ -1,0 +1,213 @@
+&probin_common
+ 
+  ! Problem specification
+  !----------------------
+  dim_in = 2                       ! 2D or 3D  
+  prob_lo(1:2) = 0.d0 0.d0         ! physical lo coordinate
+  prob_hi(1:2) = 1.d0 0.5d0        ! physical hi coordinate
+  n_cells(1:2) = 128 64            ! number of cells in domain
+  max_grid_size(1:2) = 32 32       ! max number of cells in a box
+  max_step = 2000                  ! maximum number of time steps
+  fixed_dt = -1                    ! time step
+  cfl = 0.9d0                      ! cfl number 
+  plot_int = 10                    ! Interval for writing a plotfile (for visit/amrvis)
+  chk_int = 100                    ! Interval for writing a checkpoint
+  prob_type = 3                    ! sets scalars, m, coefficients (see init.f90)
+  restart = -1                     ! checkpoint restart number
+  print_int = 1                    ! how often to output EOS drift and sum of conserved quantities
+
+  smoothing_width = -1.d0
+
+  u_init(1:2) = 0.d0 1.d0  ! controls initial velocity
+
+  ! Algorithm control / selection
+  !----------------------
+  algorithm_type = 0     ! differs from code to code.  In binary and multispcies code:
+                         ! 0 = Inertial algorithm
+                         ! 1 = Overdamped with 1 RNG
+                         ! 2 = Overdamped with 2 RNGs
+
+  ! random number seed
+  ! 0        = unpredictable seed based on clock
+  ! positive = fixed seed
+  seed = 1
+
+  grav(1:2) = 0.d0 -0.1d0             ! gravity vector (negative is downwards)
+
+  molmass(1:2) = 1.d0 1.d0            ! molar masses for nspecies
+  rhobar(1:2) = 10.d0 1.d0             ! rhobar for nspecies
+
+  ! L phi operator
+  ! if abs(visc_type) = 1, L = div beta grad
+  ! if abs(visc_type) = 2, L = div [ beta (grad + grad^T) ]
+  ! if abs(visc_type) = 3, L = div [ beta (grad + grad^T) + I (gamma - (2/3)*beta) div ]
+  ! positive = assume constant coefficients
+  ! negative = assume spatially-varying coefficients
+  visc_type = 2
+  visc_coef = 1.d-4         ! momentum diffusion coefficient 'eta'   
+
+  ! 1 = constant coefficients
+  ! -1 = spatially-varing coefficients
+                        ! for multispecies, this is maximum eigenvalue of diffusion matrix
+
+  advection_type = 2 ! 0 = centered explicit
+                     ! 1 = unlimited bilinear bds in space and time
+                     ! 2 = limited bliniear bds in space and time
+                     ! 3 = unlimited quadratic bds in space and time
+
+  ! Boundary conditions
+  !----------------------
+  ! BC specifications:
+  ! -1 = periodic
+  ! 100 = no-slip wall      (Dir condition for normal vel; Dir velocity condition for trans vel)
+  ! 101 = no-slip reservoir (Dir condition for normal vel; Dir velocity condition for trans vel)
+  ! 200 = slip wall         (Dir condition for normal vel; Dir traction condition for trans vel)
+  ! 201 = slip reservoir    (Dir condition for normal vel; Dir traction condition for trans vel)
+  ! For a complete list see bc.f90
+  bc_lo(1:2) = -1 100
+  bc_hi(1:2) = -1 100
+
+  ! Each no-slip wall may be moving with a specified tangential 
+  ! velocity along the tangential directions
+  ! In 2D:
+  ! wallspeed_lo/hi(1,1) - yvel on x-face
+  ! wallspeed_lo/hi(1,2) - xvel on y-face
+  ! In 3D:
+  ! wallspeed_lo/hi(1,1) - yvel on x-face
+  ! wallspeed_lo/hi(2,1) - zvel on x-face
+  ! wallspeed_lo/hi(1,2) - xvel on y-face
+  ! wallspeed_lo/hi(2,2) - zvel on y-face
+  ! wallspeed_lo/hi(1,3) - xvel on z-face
+  ! wallspeed_lo/hi(2,3) - yvel on z-face
+  wallspeed_hi(1,2) = 1.d0
+
+  ! Control for analyze_spectra.90
+  !----------------------
+
+  hydro_grid_int = 0    ! How often to call updateHydroGrid
+                        ! 0 if never
+                        ! negative for projectHydroGrid custom analysis
+                        ! positive for updateHydroGrid
+
+  project_dir = 0         ! Projection direction (1=x, 2=y, 3=z)
+  ! Meaning: 0=analyze 3D data only (no projection needed for HydroGrid, 
+  !          but still need projection if stats_int>0)
+  ! +dim=project along dim then analyze 2D only,
+  ! -dim=analyze 3D and then project along dim so we also analyze 2D data
+  ! It is better to use the conserved variables but it does not quite work for staggered
+
+  max_grid_projection(1:1) = 128 ! parallelization parameters
+  stats_int = -1                 ! Project grid for analysis
+                                 ! If positive, how often to compute mean and 
+                                 ! standard deviation over reduced dimensions
+  n_steps_save_stats = -1 ! How often to dump HydroGrid output files
+  n_steps_skip = 0        ! How many steps to skip
+  analyze_conserved = F   ! Should we use conserved variables for the analysis
+                          ! (does not work well)
+  center_snapshots = F    ! Should we use cell-centered momenta for the analysis
+                          ! (will smooth fluctuations)
+
+  ! stochastic properties
+  variance_coef_mom = 0.d0  ! global scaling epsilon for stochastic momentum forcing
+  variance_coef_mass = 0.d0 ! global scaling epsilon for stochastic mass forcing
+  initial_variance = 0.d0   ! multiplicative factor for initial fluctuations
+                            ! (if negative, total momentum is set to zero)
+
+  k_B = 1.d0            ! Boltzmann's constant
+  filtering_width = 0   ! If positive the random numbers will be filtered to smooth out the field s
+  stoch_stress_form = 1 ! 0=nonsymmetric (div(v)=0), 1=symmetric (no bulk)
+
+/
+
+&probin_multispecies
+
+  nspecies = 2
+  fraction_tolerance = 1.d-13
+  start_time = 0.d0
+  inverse_type = 1
+  timeinteg_type = 1
+  correct_flux = T
+  print_error_norms = T
+  is_ideal_mixture = T
+  is_nonisothermal = T
+  use_lapack = T
+  Dbar(1:1) = 1.d-6         ! SM diffusion constant  
+  Dtherm(1:1) = 0.d0       ! thermo-diffusion coefficients
+  H_offdiag(1:1) = 0.d0
+  H_diag(1:1) = 0.d0       ! =d^2F/dx^2  
+
+  T_init(1:2) = 1.d0 1.d0  ! initial values for temperature (bottom/top, inside/outside circle, etc.)
+
+  ! initial values for c_1
+  c_init(1,1:2) = 1.d0 0.d0
+  c_init(2,1:2) = 0.d0 1.d0
+
+  ! c_i boundary conditions (dir,lohi,species)
+  c_bc(1,1,1:2) = 0.d0 0.d0
+  c_bc(1,2,1:2) = 0.d0 0.d0
+  c_bc(2,1,1:2) = 0.d0 0.d0
+  c_bc(2,2,1:2) = 0.d0 0.d0
+ 
+/
+
+&probin_gmres
+
+  ! preconditioner type
+  ! 1 = projection preconditioner
+  !-1 = projection preconditioner with expensive pressure update
+  ! 2 = lower triangular preconditioner
+  !-2 = lower triangular preconditioner with negative sign
+  ! 3 = upper triangular preconditioner
+  !-3 = upper triangular preconditioner with negative sign
+  ! 4 = Block diagonal preconditioner
+  !-4 = Block diagonal preconditioner with negative sign
+  precon_type = 1
+
+  ! weighting of pressure when computing norms and inner products
+  p_norm_weight = 1.d0
+
+  ! scale theta_alpha, beta, gamma, and b_u by this, and then scale x_p by the inverse
+  scale_factor = 1.d0
+
+  ! MAC projection solver parameters:
+  mg_verbose = 0        ! multigrid verbosity
+  cg_verbose = 0        ! BiCGStab (mg_bottom_solver=1) verbosity
+  mg_max_vcycles = 1    ! maximum number of V-cycles
+  mg_minwidth = 2       ! length of box at coarsest multigrid level
+  mg_bottom_solver = 4  ! bottom solver type
+                        ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                        ! 1 = BiCGStab
+                        ! 4 = Fancy bottom solve that coarsens down additionally
+                        !     and then applies mg_nsmooths_bottom smooths
+  mg_nsmooths_down = 2       ! number of smooths at each level on the way down
+  mg_nsmooths_up = 2         ! number of smooths at each level on the way up
+  mg_nsmooths_bottom = 8     ! number of smooths at the bottom (only if mg_bottom_solver=0)
+  mg_max_bottom_nlevels = 10 ! for mg_bottom_solver=4, number of additional levels of multigrid
+  mg_rel_tol = 1.d-9         ! relative tolerance stopping criteria
+
+  ! Staggered multigrid solver parameters
+  stag_mg_verbosity = 0       ! verbosity
+  stag_mg_max_vcycles = 1     ! max number of v-cycles
+  stag_mg_minwidth = 2        ! length of box at coarsest multigrid level
+  stag_mg_bottom_solver = 4   ! bottom solver type
+                              ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                              ! 4 = Fancy bottom solve that coarsens additionally
+                              !     and then applies stag_mg_nsmooths_bottom smooths
+  stag_mg_nsmooths_down = 2   ! number of smooths at each level on the way down
+  stag_mg_nsmooths_up = 2     ! number of smooths at each level on the way up
+  stag_mg_nsmooths_bottom = 8 ! number of smooths at the bottom
+  stag_mg_max_bottom_nlevels = 10 ! for stag_mg_bottom_solver=4, number of additional levels of multigrid
+  stag_mg_omega = 1.d0        ! weighted-jacobi omega coefficient
+  stag_mg_smoother = 1        ! 0 = jacobi; 1 = 2*dm-color Gauss-Seidel
+  stag_mg_rel_tol = 1.d-9     ! relative tolerance stopping criteria
+
+  ! GMRES solver parameters
+  gmres_rel_tol = 1.d-9 ! relative tolerance stopping criteria
+  gmres_abs_tol = 0.d0  ! absolute tolerance stopping criteria
+  gmres_verbose = 1     ! gmres verbosity; if greater than 1, more residuals will be printed out
+  gmres_max_outer = 20  ! max number of outer iterations
+  gmres_max_inner = 5   ! max number of inner iterations, or restart number
+  gmres_max_iter = 100  ! max number of gmres iterations
+  gmres_min_iter = 1    ! min number of gmres iterations
+
+/

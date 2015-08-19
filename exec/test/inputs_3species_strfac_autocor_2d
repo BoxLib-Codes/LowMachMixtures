@@ -1,0 +1,374 @@
+! WARNING: gfortran has shown some issues reading matrices of rank higher than 2 from namelists
+! be careful and check values are read correctly (e.g., c_bc)
+
+! Options for low Mach equations
+&probin_common
+ 
+  ! Problem specification
+  !----------------------
+  dim_in = 2                       ! 2D or 3D  
+  prob_type = 2                    ! sets scalars, m, coefficients (see init.f90)
+  prob_lo(1:2) = 0.d0 0.d0         ! physical lo coordinate
+  prob_hi(1:2) = 32.d0 32.d0       ! physical hi coordinate
+  n_cells(1:2) = 32 32             ! number of cells in domain
+  max_grid_size(1:2) = 8 8       ! max number of cells in a box
+
+  ! Time-step control
+  !----------------------
+  fixed_dt = 0.1d0                  ! time step (if positive, fixed)
+  cfl = 0.5d0                      ! advective cfl number (used if fixed_dt<0) to determine time step
+
+  ! Controls for number of steps between actions (for HydroGrid see below)
+  !----------------------
+  max_step = 100000                  ! maximum number of time steps
+  plot_int = 0                     ! Interval for writing a plotfile (for visit/amrvis)
+  chk_int = 0                      ! Interval for writing a checkpoint
+  restart = -1                     ! checkpoint restart number
+  print_int = 200                  ! how often to output EOS drift and sum of conserved quantities
+  project_eos_int = 10             ! how often to call project_onto_eos
+
+  ! Physical parameters
+  !--------------------
+  grav(1:2) = 0.d0 0.d0               ! gravity vector (negative is downwards)
+  molmass(1:3) = 1.d0 2.d0 3.d0       ! molecular masses for nspecies (mass per molecule, *not* molar mass)
+  rhobar(1:3) = 2.0d0 3.0d0 3.85714d0   ! pure component densities for all species (chosen from EOS)
+
+  ! stochastic forcing amplitudes (1 for physical values, 0 to run them off)
+  variance_coef_mom = 1e-6  ! global scaling epsilon for stochastic momentum forcing
+  variance_coef_mass = 1e-6 ! global scaling epsilon for stochastic mass forcing
+  k_B = 1.d0                ! Boltzmann's constant
+
+  ! Algorithm control / selection
+  !----------------------
+  algorithm_type = 0     ! differs from code to code.  In binary and multispcies code:
+                         ! 0 = Inertial algorithm
+                         ! 1 = Overdamped with 1 RNG
+                         ! 2 = Overdamped with 2 RNGs
+
+  ! random number seed
+  ! 0        = unpredictable seed based on clock
+  ! positive = fixed seed
+  seed = 0
+
+  ! Viscous friction L phi operator
+  ! if abs(visc_type) = 1, L = div beta grad
+  ! if abs(visc_type) = 2, L = div [ beta (grad + grad^T) ]
+  ! if abs(visc_type) = 3, L = div [ beta (grad + grad^T) + I (gamma - (2/3)*beta) div ]
+  ! positive = assume constant coefficients
+  ! negative = assume spatially-varying coefficients
+  visc_type = 1
+  visc_coef = 1.d0         ! momentum diffusion coefficient 'eta'   
+
+  advection_type = 0 ! 0 = centered explicit
+                     ! 1 = unlimited bilinear bds in space and time
+                     ! 2 = limited bliniear bds in space and time
+                     ! 3 = unlimited quadratic bds in space and time
+
+  ! Stochastic momentum flux controls:
+  filtering_width = 0   ! If positive the *momentum* stochastic fluxes will be filtered (smoothed)
+                        ! Stochastic *mass* fluxes are not filtered
+  stoch_stress_form = 1 ! 0=nonsymmetric (div(v)=0), 1=symmetric (no bulk)
+
+  ! Initial conditions
+  !----------------------
+  u_init(1:2) = 0.d0 0.d0  ! controls initial velocity
+  smoothing_width = 1.d0   ! scale factor for smoothing initial profile
+
+  initial_variance = 1.d0   ! multiplicative factor for initial fluctuations
+                            ! (if negative, total momentum is set to zero)
+
+  ! Boundary conditions
+  !----------------------
+  ! BC specifications:
+  ! -1 = periodic
+  ! 100 = no-slip wall      (Dir condition for normal vel; Dir velocity condition for trans vel)
+  ! 101 = no-slip reservoir (Dir condition for normal vel; Dir velocity condition for trans vel)
+  ! 200 = slip wall         (Dir condition for normal vel; Dir traction condition for trans vel)
+  ! 201 = slip reservoir    (Dir condition for normal vel; Dir traction condition for trans vel)
+  ! For a complete list see bc.f90
+  bc_lo(1:2) = -1 -1
+  bc_hi(1:2) = -1 -1
+
+  ! Each no-slip wall may be moving with a specified tangential 
+  ! velocity along the tangential directions
+  ! In 2D:
+  ! wallspeed_lo/hi(1,1) - yvel on x-face
+  ! wallspeed_lo/hi(1,2) - xvel on y-face
+  ! In 3D:
+  ! wallspeed_lo/hi(1,1) - yvel on x-face
+  ! wallspeed_lo/hi(2,1) - zvel on x-face
+  ! wallspeed_lo/hi(1,2) - xvel on y-face
+  ! wallspeed_lo/hi(2,2) - zvel on y-face
+  ! wallspeed_lo/hi(1,3) - xvel on z-face
+  ! wallspeed_lo/hi(2,3) - yvel on z-face
+  wallspeed_lo(1,1:2) = 0.d0 0.d0
+  wallspeed_hi(1,1:2) = 0.d0 0.d0
+
+  ! Control for analyze_spectra.90 for calling HydroGrid
+  !----------------------
+  hydro_grid_int = 1    ! How often to call updateHydroGrid
+                        ! 0 if never
+                        ! negative for projectHydroGrid custom analysis
+                        ! positive for updateHydroGrid
+
+  project_dir = -2      ! Projection direction (1=x, 2=y, 3=z)
+  ! Meaning: 0=analyze full grid data only (no projection needed for HydroGrid, 
+  !          but still need projection if stats_int>0)
+  ! +dim=project along dim then analyze 2D only,
+  ! -dim=analyze full grid using HydroGrid and then project along dim so we also analyze projections
+  ! It is better to use the conserved variables but it does not quite work for staggered
+
+  max_grid_projection(1:1) = 32  ! parallelization parameters
+  stats_int = 2000               ! Project grid for analysis (writes hstat and vstat files)
+                                 ! If positive, how often to compute mean and 
+                                 ! standard deviation over reduced dimensions
+  n_steps_save_stats = -1 ! How often to dump HydroGrid output files
+  n_steps_skip = 10000    ! How many steps to skip > L^2/(chi*dt)
+  analyze_conserved = F   ! Should we use conserved variables for the analysis
+                          ! (does not work well)
+  center_snapshots = F    ! Should we use cell-centered momenta for the analysis
+                          ! (will smooth fluctuations)
+
+/
+
+&probin_multispecies
+
+  ! Physical properties:
+  !----------------------
+  nspecies = 3
+  is_ideal_mixture = F ! If T assume Gamma=I (H=0) and simplify
+  is_nonisothermal = F ! If T Soret effect will be included
+  
+  ! Thermodynamic and transport properties:
+  !----------------------
+  
+  ! These are lower-triangles of symmetric matrices represented as vectors
+  ! Number of elements is (nspecies*(nspecies-1)/2)
+  ! The values are red row by row starting from top going down (this allows easy addition/deletion of new species/rows)
+  ! So D_12; D_13, D_23; D_14, D_24, D_34; ...
+  Dbar(1:3) = 0.5d0 1.d0 1.5d0        ! Maxwell-Stefan diffusion constant  
+  H_offdiag(1:3) = 1.5d0 2.5d0 0.5d0  ! Off diagonal elements of H=d^2F/dx^2  
+
+  ! These are vectors of length nspecies
+  Dtherm(1:3) = 1.d0 1.d0 -2.d0      ! thermo-diffusion coefficients, only differences among elements matter
+  H_diag(1:3) = 4.d0 3.d0 2.d0       ! Diagonal of H=d^2F/dx^2  
+  
+  ! Algorithmic options:
+  !----------------------
+  fraction_tolerance = 1.d-12 ! For roundoff errors in mass and mole fractions
+  use_lapack = F ! Use LAPACK or iterative method for diffusion matrix (recommend False)
+  inverse_type = 1 ! Only for LAPACK:  1=inverse, 2=pseudo inverse
+  correct_flux = T ! Manually ensure mass is conserved to roundoff 
+  
+  ! Initial and boundary conditions 
+  !----------------------
+  T_init(1:2) = 1.d0 1.d0  ! initial values for temperature (bottom/top, inside/outside circle, etc.)
+
+  ! initial values for w
+  ! These are MASS FRACTIONS (concentrations), not partial densities
+  c_init(1,1:3) = 0.2 0.35 0.45 ! Should give rho_i = 0.6d0 1.05d0 1.35d0 
+  c_init(2,1:3) = 0.2 0.35 0.45 ! Should give rho_i = 0.6d0 1.05d0 1.35d0 
+
+  ! w_i boundary conditions (dir,lohi,species)
+  ! These are MASS FRACTIONS (concentrations), not partial densities
+  
+  ! RESERVOIR (Dirichlet BC for concentrations) bc=101
+  !c_bc(2,1,1:3) = 0.2 0.35 0.45 ! bottom
+  !c_bc(2,2,1:3) = 0.2 0.35 0.45 ! top
+  
+  ! WALL (Neumann or no-flux condition for concentration) bc=100
+  !c_bc(2,1,1:3) = 0 0 0 ! bottom
+  !c_bc(2,2,1:3) = 0 0 0 ! top
+ 
+/
+
+! Stokes solver for velocity
+&probin_gmres
+
+  ! preconditioner type
+  ! 1 = projection preconditioner
+  !-1 = projection preconditioner with expensive pressure update
+  ! 2 = lower triangular preconditioner
+  !-2 = lower triangular preconditioner with negative sign
+  ! 3 = upper triangular preconditioner
+  !-3 = upper triangular preconditioner with negative sign
+  ! 4 = Block diagonal preconditioner
+  !-4 = Block diagonal preconditioner with negative sign
+  precon_type = 1
+
+  ! weighting of pressure when computing norms and inner products
+  p_norm_weight = 1.d0
+
+  ! scale theta_alpha, beta, gamma, and b_u by this, and then scale x_p by the inverse
+  scale_factor = 1.d0
+
+  ! MAC projection solver parameters:
+  mg_verbose = 0        ! multigrid verbosity
+  cg_verbose = 0        ! BiCGStab (mg_bottom_solver=1) verbosity
+  mg_max_vcycles = 1    ! maximum number of V-cycles
+  mg_minwidth = 2       ! length of box at coarsest multigrid level
+  mg_bottom_solver = 0  ! bottom solver type
+                        ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                        ! 1 = BiCGStab
+                        ! 4 = Fancy bottom solve that coarsens down additionally
+                        !     and then applies mg_nsmooths_bottom smooths
+  mg_nsmooths_down = 2       ! number of smooths at each level on the way down
+  mg_nsmooths_up = 2         ! number of smooths at each level on the way up
+  mg_nsmooths_bottom = 8     ! number of smooths at the bottom (only if mg_bottom_solver=0)
+  mg_max_bottom_nlevels = 10 ! for mg_bottom_solver=4, number of additional levels of multigrid
+  mg_rel_tol = 1.d-9         ! relative tolerance stopping criteria
+
+  ! Staggered multigrid solver parameters
+  stag_mg_verbosity = 0       ! verbosity (set to 1 for debugging the gmres solver!)
+  stag_mg_max_vcycles = 1     ! max number of v-cycles
+  stag_mg_minwidth = 2        ! length of box at coarsest multigrid level
+  stag_mg_bottom_solver = 0   ! bottom solver type
+                              ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                              ! 4 = Fancy bottom solve that coarsens additionally
+                              !     and then applies stag_mg_nsmooths_bottom smooths
+  stag_mg_nsmooths_down = 2   ! number of smooths at each level on the way down
+  stag_mg_nsmooths_up = 2     ! number of smooths at each level on the way up
+  stag_mg_nsmooths_bottom = 8 ! number of smooths at the bottom
+  stag_mg_max_bottom_nlevels = 10 ! for stag_mg_bottom_solver=4, number of additional levels of multigrid
+  stag_mg_omega = 1.d0        ! weighted-jacobi omega coefficient
+  stag_mg_smoother = 1        ! 0 = jacobi; 1 = 2*dm-color Gauss-Seidel
+  stag_mg_rel_tol = 1.d-9     ! relative tolerance stopping criteria
+
+  ! GMRES solver parameters
+  gmres_rel_tol = 1.d-9 ! relative tolerance stopping criteria
+  gmres_abs_tol = 0.d0  ! absolute tolerance stopping criteria
+  gmres_verbose = 0     ! gmres verbosity; if greater than 1, more residuals will be printed out
+  gmres_max_outer = 20  ! max number of outer iterations
+  gmres_max_inner = 5   ! max number of inner iterations, or restart number
+  gmres_max_iter = 100  ! max number of gmres iterations
+  gmres_min_iter = 1    ! min number of gmres iterations
+
+/
+
+! HydroGrid spectral and other analysis
+!---------------------------------------
+! The variables are numbered as:
+! 3D: 1=rho, 2-4=v, 5=T, 6 onward=rho_1-rho_n or w_1-w_n
+! 2D: 1=rho, 2-3=v, 4=T, 5 onward=rho_1-rho_n or w_1-w_n
+! Means file:
+! 1=y, 2=rho, 3-5=v, 6=T, 7+=rho's or w's in 3D
+! 1=y, 2=rho, 3-4=v, 5=T, 6+=rho's or w's in 2D
+! Variance file:
+! 1=y, 2=w1-w2, 3=w1-w3, 4=w2-w3
+! Structure factor numbering:
+! 1=w1-w2, 2=w1-w3, 3=w2-w3
+
+&hydroAnalysisOptions
+! 2D full grid data
+! NOTE: This namelist will be ignored if project_dir>0
+
+   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
+   storeConserved = F ! We are not using conserved variables here due to staggering
+
+   ! Save the flow to a VTK file:
+   writeMeansVTK = F ! Save the means over the averaging interval
+   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
+
+   ! Variances
+   writeVariancesVTK = T ! Should we save a VTK file
+   nVariances = 7
+   ! numbering: 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
+   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+      ! species1 variable1 species2 variable2
+
+   ! Static structure factors
+   writeSpectrumVTK = T
+   subtractMeanFT = F ! The means are trivial here so no need to estimate them
+   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
+   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
+   nStructureFactors = 7
+   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+
+   ! Dynamic structure factors:
+   nWavenumbers=10
+   ! numbering of coloumns: 1=time, 2=rho-rho, 3=w1-w1, 4=w2-w2, 5=w3-w3, 6=w1-w2, 7=w1-w3, 8=w2-w3
+   ! Shape (2,nWavenumbers):
+   selectedWavenumbers="0 1, 0 2, 2 2, 0 4, 2 4, 4 4, 0 8, 2 8, 4 8, 8 8"
+   nSavedSnapshots=500 ! Maximum time in S(k,t) will be (nSavedSnapshots/2)*dt*hydro_grid_int
+      
+   outputFolder = "."
+   filePrefix = "3species_dynamic"
+   axisToPrint = 2 ! 1=x, 2=y, 3=z axis
+   periodic = T ! Is the system periodic along the y axes
+/
+
+&hydroAnalysisOptions
+! 1D grid after vertical projection (corresponds to vstat files)
+! NOTE: This namelist will be ignored if project_dir=0
+
+   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
+   storeConserved = F ! We are not using conserved variables here due to staggering
+
+   ! Save the flow to a VTK file:
+   writeMeansVTK = F ! Save the means over the averaging interval
+   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
+
+   ! Variances
+   writeVariancesVTK = F ! Should we save a VTK file
+   nVariances = 0
+   ! 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
+   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+      ! species1 variable1 species2 variable2
+
+   ! Static structure factors
+   writeSpectrumVTK = F
+   subtractMeanFT = F ! The means are trivial here so no need to estimate them
+   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
+   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
+   nStructureFactors = 0
+   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+
+   ! Dynamic structure factors:
+   nWavenumbers=0
+   ! Shape (2,nWavenumbers):
+   selectedWavenumbers=""
+   nSavedSnapshots=200
+      
+   outputFolder = "."
+   filePrefix = "3species_dynamic_vstat"
+   axisToPrint = 1 ! 1=x, 2=y, 3=z axis
+   periodic = T ! Is the system periodic along the y axes
+/
+
+&hydroAnalysisOptions
+! 1D grid after horizontal projection (corresponds to hstat files)
+! NOTE: This namelist will be ignored if project_dir=0
+
+   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
+   storeConserved = F ! We are not using conserved variables here due to staggering
+
+   ! Save the flow to a VTK file:
+   writeMeansVTK = F ! Save the means over the averaging interval
+   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
+
+   ! Variances
+   writeVariancesVTK = F ! Should we save a VTK file
+   nVariances = 0
+   ! 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
+   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+      ! species1 variable1 species2 variable2
+
+   ! Static structure factors
+   writeSpectrumVTK = F
+   subtractMeanFT = F ! The means are trivial here so no need to estimate them
+   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
+   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
+   nStructureFactors = 0
+   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
+
+   ! Dynamic structure factors:
+   nWavenumbers=0
+   ! Shape (2,nWavenumbers):
+   selectedWavenumbers=""
+   nSavedSnapshots=100
+      
+   outputFolder = "."
+   filePrefix = "3species_dynamic_hstat"
+   axisToPrint = 1 ! 1=x, 2=y, 3=z axis
+   periodic = T ! Is the system periodic along the y axes
+/

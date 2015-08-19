@@ -1,0 +1,119 @@
+&probin_common
+ 
+ dim_in = 2                       ! problem dimension
+ plot_int = 10                    ! plot interval
+ print_int = 1
+ max_step = 1000                  ! total number of computational step
+ max_grid_size(1:2) = 32 32       ! individual box size 
+ n_steps_skip = 0                 ! when to start analyzing data
+ k_B      = 1E-3                  ! Boltzmann constant
+
+ fixed_dt = 0.01                  ! fixed_dt
+ prob_type = -1                   
+
+ algorithm_type = 1               ! 0 = inertial
+                                  ! 1 = overdamped, 1RNG
+                                  ! 2 = overdamped, 2RNGs
+
+ ! Grid size
+ prob_lo(1:2) = 0 0
+ prob_hi(1:2) = 64 64             ! physical systemsize = (prob_lo-prob_hi)
+ n_cells(1:2) = 64 64             ! to set dx = systemsize/n_cells
+
+ visc_coef = 1.d-2                ! eta (viscosity)
+  
+ molmass(1:3) = 1.0 0.75 1.25  ! molar mass of n-species
+ rhobar(1:3) = 0.9 1.0 1.1     ! rhobar
+
+ ! allowable options for this example are
+ ! 100 = no-slip wall
+ bc_lo(1:2) = 100 100
+ bc_hi(1:2) = 100 100
+
+ variance_coef_mom = 1.d-6            ! for stochastic momentum forcing
+ variance_coef_mass = 1E-6        ! parameter to set variance (=1/thickness and =1 ideal)
+  
+/
+
+&probin_multispecies
+ 
+ nspecies = 3                     ! number of species
+ fraction_tolerance = 1e-14       ! to prevent division by zero 
+ start_time  = 1.0                ! start at t=1 to avoid NAN coming from rho_exact at t=0
+ !include_temp = .false.          ! right now no temperature equation
+ inverse_type = 1                 ! LAPACK inverse type: 1=inverse, 2=pseudo inverse 
+ timeinteg_type = 3               ! integrator type: 1=Euler,2=predictor-corrector,3=midpoint,4=RK3
+ correct_flux = .true.            ! correct flux to numeric roundoff
+ print_error_norms = .true.       ! check L1/L2/Linf norm 
+ is_ideal_mixture  = .true.       ! false=Bdag*Gama, true=Bdag 
+ is_nonisothermal  = .true.       ! true=include grad(T), false= no grad(T)  
+ use_lapack  = .false.            ! false=iterative methods, true=inverse/pseudoinverse 
+
+ ! these are CONCENTRATIONS
+ c_init(1,1:3) = 0.2 0.5 0.3      ! inside the circle
+ c_init(2,1:3) = 0.3 0.2 0.5      ! outside the circle
+
+ Dbar(1:3) = 1.0 2.0 2.0       ! SM diffusion constant arranged in lower-triangle
+ Dtherm(1:3) = 1.0 1.0 -2.0    ! thermo-diffusion constant (sums to zero)
+ T_init(1:2) = 1.0 2.0              ! Upper and lower plate temperature
+ 
+/
+
+&probin_gmres
+
+  ! preconditioner type
+  ! 1 = projection preconditioner
+  !-1 = projection preconditioner with expensive pressure update
+  ! 2 = lower triangular preconditioner
+  !-2 = lower triangular preconditioner with negative sign
+  ! 3 = upper triangular preconditioner
+  !-3 = upper triangular preconditioner with negative sign
+  ! 4 = Block diagonal preconditioner
+  !-4 = Block diagonal preconditioner with negative sign
+  precon_type = 1
+
+  ! weighting of pressure when computing norms and inner products
+  p_norm_weight = 1.d0
+
+  ! MAC projection solver parameters:
+  mg_verbose = 0               ! multigrid verbosity
+  cg_verbose = 0               ! BiCGStab (mg_bottom_solver=1) verbosity
+  mg_max_vcycles = 1           ! maximum number of V-cycles
+  mg_minwidth = 2              ! length of box at coarsest multigrid level
+  mg_bottom_solver = 4         ! bottom solver type
+                               ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                               ! 1 = BiCGStab
+                               ! 4 = Fancy bottom solve that coarsens down additionally
+                               !     and then applies mg_nsmooths_bottom smooths
+  mg_nsmooths_down = 2         ! number of smooths at each level on the way down
+  mg_nsmooths_up = 2           ! number of smooths at each level on the way up
+  mg_nsmooths_bottom = 8       ! number of smooths at the bottom (only if mg_bottom_solver=0)
+  mg_max_bottom_nlevels = 1000 ! for mg_bottom_solver=4, number of additional levels of multigrid
+  mg_rel_tol = 1.d-9           ! relative tolerance stopping criteria
+
+  ! Staggered multigrid solver parameters
+  stag_mg_verbosity = 0        ! verbosity
+  stag_mg_max_vcycles = 1      ! max number of v-cycles
+  stag_mg_minwidth = 2         ! length of box at coarsest multigrid level
+                               ! 0 = smooths only, controlled by mg_nsmooths_bottom
+                               ! 4 = Fancy bottom solve that coarsens additionally
+                               !     and then applies stag_mg_nsmooths_bottom smooths
+  stag_mg_nsmooths_down = 2    ! number of smooths at each level on the way down
+  stag_mg_nsmooths_up = 2      ! number of smooths at each level on the way up
+  stag_mg_nsmooths_bottom = 8  ! number of smooths at the bottom
+  stag_mg_max_bottom_nlevels = 10 ! for stag_mg_bottom_solver=4, 
+                                  ! number of additional levels of multigrid
+  stag_mg_omega = 1.d0         ! weighted-jacobi omega coefficient
+  stag_mg_smoother = 1         ! 0 = jacobi; 1 = 2*dm-color Gauss-Seidel
+  stag_mg_rel_tol = 1.d-9      ! relative tolerance stopping criteria
+
+  ! GMRES solver parameters
+  gmres_rel_tol = 1.d-10        ! relative tolerance stopping criteria
+  gmres_abs_tol = 0.d0         ! absolute tolerance stopping criteria
+  gmres_verbose = 1            ! gmres verbosity; if greater than 1, more residuals will be printed out
+  gmres_max_outer = 20         ! max number of outer iterations
+  gmres_max_inner = 5          ! max number of inner iterations, or restart number
+  gmres_max_iter = 100         ! max number of gmres iterations
+  gmres_min_iter = 1           ! min number of gmres iterations
+
+/
