@@ -19,6 +19,7 @@ f90sources += multifab_filter.f90
 f90sources += multifab_physbc_extrap.f90
 f90sources += multifab_physbc_stag.f90
 f90sources += probin_common.f90
+f90sources += RNG.f90
 f90sources += stag_applyop.f90
 f90sources += stochastic_m_fluxdiv.f90
 f90sources += sum_momenta.f90
