@@ -1,4 +1,3 @@
-f90sources += analyze_spectra.f90
 f90sources += bds.f90
 f90sources += compute_HSE_pres.f90
 f90sources += convert_m_to_umac.f90
