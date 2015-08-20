@@ -18,6 +18,7 @@ f90sources += multifab_filter.f90
 f90sources += multifab_physbc_extrap.f90
 f90sources += multifab_physbc_stag.f90
 f90sources += NURNGs.f90
+f90sources += ParallelRNG.f90
 f90sources += Precision.f90
 f90sources += probin_common.f90
 f90sources += Random.f90

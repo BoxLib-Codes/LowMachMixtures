@@ -36,7 +36,7 @@ subroutine main_driver()
   use probin_common_module, only: prob_lo, prob_hi, n_cells, dim_in, max_grid_size, &
                                   plot_int, chk_int, seed, stats_int, bc_lo, bc_hi, restart, &
                                   probin_common_init, print_int, project_eos_int, &
-                                  advection_type, fixed_dt, max_step, cfl, &
+                                  advection_type, fixed_dt, max_step, cfl, n_steps_skip, &
                                   algorithm_type, variance_coef_mom, initial_variance, &
                                   barodiffusion_type
   use probin_multispecies_module, only: nspecies, Dbar, &
@@ -79,6 +79,9 @@ subroutine main_driver()
   type(multifab), allocatable  :: eta_ed(:,:)
   type(multifab), allocatable  :: kappa(:)
   type(multifab), allocatable  :: conc(:)
+
+  integer :: n_rngs
+  logical :: nodal_temp(3)
 
   !==============================================================
   ! Initialization
@@ -461,9 +464,9 @@ subroutine main_driver()
      end if
      
      ! print out projection (average) and variance)
-     if (stats_int .gt. 0) then
-        call print_stats(mla,dx,0,time,umac=umac,rho=rho_old,temperature=Temp)
-     end if
+!     if (stats_int .gt. 0) then
+!        call print_stats(mla,dx,0,time,umac=umac,rho=rho_old,temperature=Temp)
+!     end if
 
   end if
 
