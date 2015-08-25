@@ -1,0 +1,99 @@
+# HydroGrid make rules:
+#--------------------------
+
+# Look for sources in the repository:
+vpath %.cpp $(SRC_HYDROLIB)
+vpath %.H $(SRC_HYDROLIB)
+vpath %.c $(SRC_HYDROLIB)
+vpath %.h $(SRC_HYDROLIB)
+vpath %.f90 $(SRC_HYDROLIB)
+
+# From HydroGrid library:
+CHEADERS += RNGs.h visit_writer.h HydroGrid.h
+CSOURCES += RNGs.c visit_writer.c
+FSOURCES += Precision.f90 SimpleSorting.f90 RNG.f90 Random.f90 NURNGs.f90 FFTW.f90 VisitWriter.f90 Tridiagonal.f90 HydroGridModule.f90 HydroGridCInterface.f90
+
+OBJECTS=$(CSOURCES:.c=.o) $(FSOURCES:.f90=.o) 
+
+LIBOBJECTS = Precision.o FFTW.o VisitWriter.o HydroGridModule.o HydroGridCInterface.o visit_writer.o
+
+EXECUTABLES = TestTridiagonal.exe TestHydroGrid.exe TestHydroStaggered.exe TestRNGs.exe ViscousBurgers.exe TrainModel.exe WeakSDE.exe
+
+all: $(EXECUTABLES) libHydroAnalysis.a
+
+clean:
+	rm -rf *.o *.mod $(EXECUTABLES)
+
+libHydroAnalysis.a: $(LIBOBJECTS)
+	ar rcs libHydroAnalysis.a $(LIBOBJECTS)
+
+Precision.o: Precision.f90
+	$(FC) -c $<
+
+SimpleSorting.o: SimpleSorting.f90
+	$(FC) -c $<
+
+Random.o: Random.f90 Precision.o
+	$(FC) -c $<
+
+NURNGs.o: NURNGs.f90
+	$(FC) -c $<
+
+RNG.o: RNG.f90 Random.o NURNGs.o
+	$(FC) -c $<
+
+RNGs.o: RNGs.c
+	$(CC) -c -DBL_FORT_USE_UNDERSCORE $<
+
+SeedRNGs.o: SeedRNGs.cpp RNGs.h
+	$(CPPC) -I $(MPIINC) -c $<
+                        
+visit_writer.o: visit_writer.c
+	$(CC) -c $<
+
+FFTW.o: FFTW.f90 Precision.o
+	$(FC) -c $<
+
+VisitWriter.o: VisitWriter.f90
+	$(FC) -c $<
+
+Tridiagonal.o: Tridiagonal.f90 Precision.o
+	$(FC) -c $<
+
+TestTridiagonal.exe: TestTridiagonal.f90 $(OBJECTS)
+	$(FC_C) -o $@ $< $(OBJECTS) $(LIBRARIES) 
+
+HydroGridModule.o: HydroGridModule.f90 FFTW.o VisitWriter.o
+	$(FC) -c $<
+
+HydroGridCInterface.o: HydroGridCInterface.f90 HydroGridModule.o
+	$(FC) -c $<
+
+TestHydroGrid.o: TestHydroGrid.c HydroGrid.h RNGs.h 
+	$(CC) -c $<
+
+TestHydroGrid.exe: TestHydroGrid.o $(OBJECTS)
+	$(FC_C) -o $@ $< $(OBJECTS) $(LIBRARIES) 
+
+TestHydroStaggered.o: TestHydroStaggered.c HydroGrid.h RNGs.h
+	$(CC) -c $<
+
+TestHydroStaggered.exe: TestHydroStaggered.o $(OBJECTS)
+	$(FC_C) -o $@ $< $(OBJECTS) $(LIBRARIES) 
+
+# You can use either C++ (TestRNGs.cpp) or C (TestRNGs.c) here
+TestRNGs.exe: TestRNGs.cpp RNGs.o SeedRNGs.o
+	$(CPPC) -I $(MPIINC) -o $@ $< RNGs.o SeedRNGs.o \
+                $(LIBRARIES) -L $(MPIDIR)/lib -lmpi_cxx -lmpi -lmpi_mpifh #-lmpi_f90 -lmpi_f77 -lmpi
+
+# Train model real hydro code:
+TrainModel.exe: TrainModel.f90 $(OBJECTS)
+	$(FC) -o $@ $< $(OBJECTS) $(LIBRARIES)
+
+# Simple 1D stochastic advection-diffusion equation code:
+ViscousBurgers.exe: ViscousBurgers.f90 $(OBJECTS)
+	$(FC) -o $@ $< $(OBJECTS) $(LIBRARIES)
+
+# Testing some simple integrators for SDEs:
+WeakSDE.exe: WeakSDE.f90 $(OBJECTS)
+	$(FC) -o $@ $< $(OBJECTS) $(LIBRARIES)

@@ -20,7 +20,7 @@ module probin_common_module
   real(dp_t),save :: prob_lo(MAX_SPACEDIM),prob_hi(MAX_SPACEDIM)
   real(dp_t),save :: wallspeed_lo(MAX_SPACEDIM-1,MAX_SPACEDIM)
   real(dp_t),save :: wallspeed_hi(MAX_SPACEDIM-1,MAX_SPACEDIM)
-  integer,save    :: project_dir,max_grid_projection(2)
+  integer,save    :: hydro_grid_int,project_dir,max_grid_projection(2)
   integer,save    :: stats_int,n_steps_save_stats,n_steps_skip
   logical,save    :: analyze_conserved,center_snapshots
   real(dp_t),save :: variance_coef_mom,variance_coef_mass,initial_variance
@@ -52,7 +52,7 @@ module probin_common_module
   namelist /probin_common/ cfl             ! advective cfl number (used if fixed_dt<0) to determine time step
 
 
-  ! Controls for number of steps between actions
+  ! Controls for number of steps between actions (for HydroGrid see below)
   !----------------------
   namelist /probin_common/ max_step        ! maximum number of time steps
   namelist /probin_common/ plot_int        ! Interval for writing a plotfile (for visit/amrvis)
@@ -146,6 +146,31 @@ module probin_common_module
   namelist /probin_common/ wallspeed_lo
   namelist /probin_common/ wallspeed_hi
 
+  ! Control for analyze_spectra.90 for calling HydroGrid
+  !----------------------
+  namelist /probin_common/ hydro_grid_int     ! How often to call updateHydroGrid
+                                              ! 0 if never
+                                              ! negative for projectHydroGrid custom analysis
+                                              ! positive for updateHydroGrid
+
+  namelist /probin_common/ project_dir         ! Projection direction (1=x, 2=y, 3=z)
+  ! Meaning: 0=analyze 3D data only (no projection needed for HydroGrid, 
+  !          but still need projection if stats_int>0)
+  ! +dim=project along dim then analyze 2D only,
+  ! -dim=analyze 3D and then project along dim so we also analyze 2D data
+  ! It is better to use the conserved variables but it does not quite work for staggered
+
+  namelist /probin_common/ max_grid_projection ! parallelization parameters
+  namelist /probin_common/ stats_int           ! Project grid for analysis
+                                               ! If positive, how often to compute mean and 
+                                               ! standard deviation over reduced dimensions
+  namelist /probin_common/ n_steps_save_stats  ! How often to dump HydroGrid output files
+  namelist /probin_common/ n_steps_skip        ! How many steps to skip
+  namelist /probin_common/ analyze_conserved   ! Should we use conserved variables for the analysis
+                                               ! (does not work well)
+  namelist /probin_common/ center_snapshots    ! Should we use cell-centered momenta for the analysis
+                                               ! (will smooth fluctuations)
+
   !------------------------------------------------------------- 
 
 contains
@@ -225,6 +250,16 @@ contains
 
     wallspeed_lo(1:MAX_SPACEDIM-1,1:MAX_SPACEDIM) = 0.d0
     wallspeed_hi(1:MAX_SPACEDIM-1,1:MAX_SPACEDIM) = 0.d0   
+
+    hydro_grid_int = 0
+    project_dir = 0
+
+    max_grid_projection = 128
+    stats_int = -1
+    n_steps_save_stats = -1
+    n_steps_skip = 0
+    analyze_conserved = .false.
+    center_snapshots = .false.
 
     need_inputs = .true.
 
@@ -515,6 +550,50 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) wallspeed_hi(2,3)
+
+       case ('--hydro_grid_int')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) hydro_grid_int
+
+       case ('--project_dir')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) project_dir
+
+       case ('--max_grid_projection_1')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) max_grid_projection(1)
+       case ('--max_grid_projection_2')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) max_grid_projection(2)
+
+       case ('--stats_int')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) stats_int
+
+       case ('--n_steps_save_stats')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) n_steps_save_stats
+
+       case ('--n_steps_skip')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) n_steps_skip
+
+       case ('--analyze_conserved')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) analyze_conserved
+
+       case ('--center_snapshots')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) center_snapshots
 
        case ('--variance_coef_mom')
           farg = farg + 1

@@ -1,0 +1,37 @@
+SRC_HYDROLIB=../HydroGrid
+
+MPIDIR=/usr/lib64/openmpi
+MPIINC=/usr/include/openmpi-x86_64/
+
+#MPIDIR=/usr/lib64/openmpi/1.4-gcc
+#MPIINC=$(MPIDIR)/include
+
+# Note: We have to use gfortran>4.4 since we are using Fortran-C interop
+
+# C/C++ compiler:
+CCOMP=gcc # gcc44
+CC=$(CCOMP) #-g
+CPPC=$(CCOMP) #-g
+
+# Fortran compiler:
+
+# GNU:
+FCOMP=gfortran # gfortran44
+FC_O=$(FCOMP) -O -Wall -ffree-line-length-none  # Optimized
+FC_g=$(FCOMP) -g -fbounds-check -Wall -ffree-line-length-none # Debugging
+FC_C=$(FC) # Mixed language linking is more complicated
+
+# Intel:
+#FC_O=ifort -g -traceback -O # Intel basic optimization but annotated for profiling
+#FC_O=ifort -O3 -ip -mp1 -fltconsistency # -traceback  -g # The same flags as with Parallel.f90
+#FC_g=ifort -g -traceback -check bounds -check uninit -fpe1 # Debugging
+#FC_C=$(FC) -nofor-main # Mixed language linking is more complicated
+
+# Choose level of optimization:
+FC=$(FC_O) # Optimized
+#FC=$(FC_g) # Debugging
+
+# For linking the right libraries in:
+LIBRARIES = -L/usr/lib64/
+LIBRARIES += -lgsl -lgslcblas # If using the GSL
+LIBRARIES += -lfftw3 -lfftw3f -lm -lgfortran

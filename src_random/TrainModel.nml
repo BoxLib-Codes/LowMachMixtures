@@ -1,0 +1,37 @@
+128 500000000000 0 ! n_tracks, n_steps, seed
+100 1.0 0 ! n_passrs_per_train, v_platform, dn_platform
+12800 -1 0 1000000 ! n_steps_snapshots, n_steps_save, n_skip_steps
+
+&hydroAnalysisOptions ! HydroGridModule.f90
+   filePrefix="Train.L_128.100hops"
+   staggeredVelocities = 1 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
+   
+   writeSnapshotVTK=F ! Save snapshots of the instantaneous fields
+   
+   ! Means file: column 1=y, 2=rho, 3=v_x, 4=v_y, 5=T, 6=c
+   storeConserved = F ! Only if using conserved variables (we are not)
+   writeMeansVTK = F ! Write the means to a VTK file
+
+   ! Variances
+   writeVariancesVTK = F ! Should we save a VTK file
+   nVariances = 0 ! How many co-variances to calculate and save
+   ! 1=y, 2=rho-rho, 3=vx-vx, 4=vy-vy, 5=rho-vx, 6=rho-vy, 7=vx-vy
+   variancePairs = "0 1 0 1, 0 2 0 2, 0 3 0 3, 0 1 0 2, 0 1 0 3, 0 2 0 3"
+      ! species1 variable1 species2 variable2
+   
+   ! Static structure factors
+   writeSpectrumVTK = F
+   writeAbsValue = F ! Only write absolute values of complex values to VTK file?
+   nStructureFactors = 6
+   ! 1=rho-rho, 2=v-v, 3=f-f, 4=rho-v, 5=rho-f, 6=v-f
+   structureFactorPairs = "0 1 0 1, 0 2 0 2, 0 3 0 3, 0 1 0 2, 0 1 0 3, 0 2 0 3"
+   
+   ! Dynamic structure factors:
+   nWavenumbers=5
+   ! Shape (3,nWavenumbers):
+   selectedWavenumbers="0 2 0, 0 4 0, 0 8 0, 0 16 0, 0 32 0"   
+   nSavedSnapshots=2500
+   
+   outputFolder = "Output/"
+   axisToPrint = 2 ! 1=x, 2=y, 3=z axis
+/

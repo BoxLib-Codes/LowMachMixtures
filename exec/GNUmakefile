@@ -23,6 +23,9 @@ VPATH_LOCATIONS += ../src_gmres
 include ../src_common/GPackage.mak
 VPATH_LOCATIONS += ../src_common
 
+include ../src_random/GPackage.mak
+VPATH_LOCATIONS += ../src_random
+
 include $(BOXLIB_HOME)/Src/F_BaseLib/GPackage.mak
 VPATH_LOCATIONS += $(BOXLIB_HOME)/Src/F_BaseLib
 
