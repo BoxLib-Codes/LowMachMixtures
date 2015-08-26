@@ -32,7 +32,7 @@ VPATH_LOCATIONS += $(BOXLIB_HOME)/Src/F_BaseLib
 include $(BOXLIB_HOME)/Src/LinearSolvers/F_MG/GPackage.mak
 VPATH_LOCATIONS += $(BOXLIB_HOME)/Src/LinearSolvers/F_MG
 
-LAPACK95_DIR = ../src_multiSpec/LAPACK95
+LAPACK95_DIR = ../src_lapack
 
 F90FLAGS += -I$(LAPACK95_DIR)/lapack95_modules
 ifeq ($(findstring hopper, $(HOST)), hopper)
