@@ -29,12 +29,16 @@ and then do "make" to build the code.
 
 Example input files are provided in exec/test:
 
-ANDY: FINISH THIS LIST
-- nonideal diffusion
-- exec/test/inputs_dlc_shadow_3d is the DLC instability example described in Section IV.C in Ref. [1].
-- MMI instability
-- exec/test/inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [1]
 - thermodiffusion
+- exec/test/inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [1]
+- MMI instability
+- exec/test/inputs_dlc_shadow_3d is the DLC instability example described in Section IV.C in Ref. [1].
+
+These tests were originally performed with a previous (binary only) version of the code and have been roughly ported to the multispecies code:
+
+-inputs_bubble_2d is similar to the lid-driven cavity test from 4.B in Ref. [2]
+-inputs_square_2d is similar to the sharp interface square test from 4.C in Ref. [2]
+-inputs_khlm_3d is similar to the Kelvin-Helmholtz problem from 4.D in Ref. [2]
 
 
 Caveats: 
@@ -42,4 +46,6 @@ Caveats:
 1) The code used to perform spectral analysis of the results is not included in this distribution. The code writes files using the BoxLib file formats and these can be read and visualized using the tools described in the BoxLib manual. In particular the code can also write projections (averages) along a selected axes of the full 2D or 3D grid to reduce I/O requirements and simpify visualization and analysis.
 
 2) BDS advection with non-periodic boundary conditions is not fully implemented, or, if implemented, may not actually be third-order accurate. Correct treatment of boundary conditions in BDS is an open research problem.
+
+3) Quadratic BDS advection (advection_type=3 and 4) is still under development.
 

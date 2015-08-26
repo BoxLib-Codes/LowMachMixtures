@@ -12,24 +12,6 @@
 
   chk_int = 100
 
-  max_grid_size(1:2) = 64 64  
-  n_cells(1:2) = 512 512   ! number of cells in domain
-  fixed_dt = 0.000625d0    ! time step
-  plot_int = 3200          ! Interval for writing a plotfile (for visit/amrvis)
-  max_step = 3200          ! maximum number of time steps
-
-  max_grid_size(1:2) = 64 64  
-  n_cells(1:2) = 256 256   ! number of cells in domain
-  fixed_dt = 0.00125d0     ! time step
-  plot_int = 1600          ! Interval for writing a plotfile (for visit/amrvis)
-  max_step = 1600          ! maximum number of time steps
-
-  max_grid_size(1:2) = 32 32  
-  n_cells(1:2) = 128 128   ! number of cells in domain
-  fixed_dt = 0.0025d0      ! time step
-  plot_int = 800           ! Interval for writing a plotfile (for visit/amrvis)
-  max_step = 800           ! maximum number of time steps
-
   max_grid_size(1:2) = 32 32  
   n_cells(1:2) = 64 64     ! number of cells in domain
   fixed_dt = 0.005d0       ! time step

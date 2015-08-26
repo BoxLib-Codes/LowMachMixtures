@@ -12,23 +12,23 @@
 
   smoothing_width = 0.d0
 
-  max_grid_size(1:2) = 32 32
+  max_grid_size(1:2) = 128 128
   n_cells(1:2) = 256 256   ! number of cells in domain
-  fixed_dt = 0.00125d0     ! time step
+  fixed_dt = 0.0025d0      ! time step
   plot_int = 100           ! Interval for writing a plotfile (for visit/amrvis)
-  max_step = 2000          ! maximum number of time steps
+  max_step = 1600          ! maximum number of time steps
 
   ! Controls for number of steps between actions (for HydroGrid see below)
   !----------------------
-  prob_type = -12                  ! sets scalars, m, coefficients (see init.f90)
+  prob_type = -11                  ! sets scalars, m, coefficients (see init.f90)
   print_int = 1                    ! how often to output EOS drift and sum of conserved quantities
   project_eos_int = 1000           ! how often to call project_onto_eos
 
   ! Physical parameters
   !--------------------
   grav(1:2) = 0.d0 -5.d0               ! gravity vector (negative is downwards)
-  molmass(1:3) = 2.d0 1.d0 3.d0        ! molecular masses for nspecies (mass per molecule, *not* molar mass)
-  rhobar(1:3) = 3.d0 2.d0 1.d0         ! pure component densities for all species
+  molmass(1:2) = 1.d0 1.d0             ! molecular masses for nspecies (mass per molecule, *not* molar mass)
+  rhobar(1:2) = 1.d0 2.d0              ! pure component densities for all species
 
   ! stochastic forcing amplitudes (1 for physical values, 0 to run them off)
   variance_coef_mom = 0.d0  ! global scaling epsilon for stochastic momentum forcing
@@ -51,7 +51,7 @@
   visc_type = -2
   visc_coef = 1.d-1        ! momentum diffusion coefficient 'eta'   
 
-  advection_type = 4 ! 0 = centered explicit
+  advection_type = 2 ! 0 = centered explicit
                      ! 1 = unlimited bilinear bds in space and time
                      ! 2 = limited bliniear bds in space and time
                      ! 3 = unlimited quadratic bds in space and time
@@ -83,7 +83,7 @@
 
   ! Physical properties:
   !----------------------
-  nspecies = 3
+  nspecies = 2
   fraction_tolerance = 1.d-12 ! For roundoff errors in mass and mole fractions
   start_time = 0.d0
 
@@ -101,8 +101,8 @@
   temp_type = 0 ! for initializing temperature
 
   ! initial values for c
-  c_init(1,1:3) = 0.5d0 0.5d0 0.0d0
-  c_init(2,1:3) = 0.d0  0.d0  1.d0
+  c_init(1,1:2) = 1.d0 0.d0
+  c_init(2,1:2) = 0.d0 1.d0
   
   ! Thermodynamic and transport properties:
   !----------------------
@@ -112,12 +112,12 @@
   ! The values are red row by row starting from top going down
   ! (this allows easy addition/deletion of new species/rows)
   ! So D_12; D_13, D_23; D_14, D_24, D_34; ...
-  Dbar(1:3) = 1.d-12 1.d-12 1.d-12
-  Dtherm(1:3) = 0.d0 0.d0 0.d0 ! thermo-diffusion coefficients, only differences among elements matter
-  H_offdiag(1:3) = 0.d0        ! Off diagonal elements of H=d^2F/dx^2  
-  H_diag(1:3) = 0.d0           ! Diagonal of H=d^2F/dx^2, these are vectors of length nspecies
+  Dbar(1:2) = 1.d-12 1.d-12
+  Dtherm(1:2) = 0.d0 0.d0  ! thermo-diffusion coefficients, only differences among elements matter
+  H_offdiag(1:2) = 0.d0    ! Off diagonal elements of H=d^2F/dx^2  
+  H_diag(1:2) = 0.d0       ! Diagonal of H=d^2F/dx^2, these are vectors of length nspecies
   
-  plot_stag = T                ! print mac velocities in separate staggered plotfile
+  plot_stag = T            ! print mac velocities in separate staggered plotfile
  
 /
 
