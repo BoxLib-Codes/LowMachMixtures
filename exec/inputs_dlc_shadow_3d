@@ -8,6 +8,7 @@
   prob_lo(1:3) = 0.d0 0.d0 0.d0    ! physical lo coordinate
   prob_hi(1:3) = 1.0 0.5d0 1.d0   ! physical hi coordinate
   n_cells(1:3) = 256 128 256        ! number of cells in domain
+  n_cells(1:3) = 64 32 64           ! number of cells in domain
   max_grid_size(1:3) = 32 32 32    ! max number of cells in a box
 
   fixed_dt = 2.5d-2                ! time step
@@ -89,26 +90,12 @@
 !  bc_lo(1:3) = -1 100 100
 !  bc_hi(1:3) = -1 100 100
 
-  ! Control for analyze_spectra.90
-  !----------------------
-
-  hydro_grid_int = 1   ! How often to call updateHydroGrid
-                        ! 0 if never
-                        ! negative for projectHydroGrid custom analysis
-                        ! positive for updateHydroGrid
-
   project_dir = 2         ! Projection direction (1=x, 2=y, 3=z)
-  ! Meaning: 0=analyze 3D data only (no projection needed for HydroGrid, 
-  !          but still need projection if stats_int>0)
-  ! +dim=project along dim then analyze 2D only,
-  ! -dim=analyze 3D and then project along dim so we also analyze 2D data
-  ! It is better to use the conserved variables but it does not quite work for staggered
 
   max_grid_projection(1:2) = 32 32   ! parallelization parameters
   stats_int = 10                     ! Project grid for analysis
                                      ! If positive, how often to compute mean and 
                                      ! standard deviation over reduced dimensions
-  n_steps_save_stats = 10 ! How often to dump HydroGrid output files
   n_steps_skip = 0        ! How many steps to skip
   analyze_conserved = F   ! Should we use conserved variables for the analysis
                           ! (does not work well)
@@ -229,126 +216,4 @@
   gmres_max_iter = 100  ! max number of gmres iterations
   gmres_min_iter = 1    ! min number of gmres iterations
 
-/
-
-! HydroGrid spectral and other analysis
-!---------------------------------------
-! The variables are numbered as:
-! 3D: 1=rho, 2-4=v, 5=T, 6 onward=rho_1-rho_n or w_1-w_n
-! 2D: 1=rho, 2-3=v, 4=T, 5 onward=rho_1-rho_n or w_1-w_n
-
-&hydroAnalysisOptions
-! 3D full grid data
-! NOT USED HERE sincr proj_dir>0!
-! NOTE: This namelist will be ignored if project_dir>0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   variancePairs = ""
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = F
-   subtractMeanFT = F ! The means are trivial here so no need to estimate them
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 0
-   structureFactorPairs = ""
-
-   ! Dynamic structure factors:
-   nWavenumbers=0
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers=""
-   nSavedSnapshots=100
-      
-   outputFolder = "."
-   filePrefix = "dlc_3d_full"
-   axisToPrint = 1 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes, which is the z axes in the original 3d setup
-
-/
-
-! This one is the one that computes spectra of the vstat files
-&hydroAnalysisOptions
-! 2D grid after vertical projection (corresponds to vstat files)
-! This is the IMPORTANT one here
-! NOTE: This namelist will be ignored if project_dir=0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   variancePairs = "0"
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = T
-   subtractMeanFT = F ! Important not to do this for only one sample since mean is not reliable
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 1
-   ! numbering: 1=rho-rho
-   structureFactorPairs = "0 1 0 1"
-
-   ! Dynamic structure factors:
-   nWavenumbers=0
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers=""
-   nSavedSnapshots=100
-      
-   outputFolder = "."
-   filePrefix = "dlc_3d_vstat"
-   axisToPrint = 2 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes
-/
-
-&hydroAnalysisOptions
-! 1D grid after horizontal projection (corresponds to hstat files)
-! NOTE: This namelist will be ignored if project_dir=0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   variancePairs = ""
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = F
-   subtractMeanFT = F ! The means are trivial here so no need to estimate them
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 0
-   structureFactorPairs = ""
-
-   ! Dynamic structure factors:
-   nWavenumbers=0
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers=""
-   nSavedSnapshots=100
-      
-   outputFolder = "."
-   filePrefix = "dlc_3d_hstat"
-   axisToPrint = 2 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes, makes no sense since this is 1d
 /
