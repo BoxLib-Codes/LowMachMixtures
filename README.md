@@ -38,8 +38,7 @@ These tests were originally performed with a previous (binary only) version of t
 
 -inputs_bubble_2d is similar to the lid-driven cavity test from 4.B in Ref. [2]
 -inputs_square_2d is similar to the sharp interface square test from 4.C in Ref. [2]
--inputs_khlm_3d is similar to the Kelvin-Helmholtz problem from 4.D in Ref. [2]
-
+-inputs_khlm_3d/2d is similar to the Kelvin-Helmholtz problem from 4.D in Ref. [2]
 
 Caveats: 
 
