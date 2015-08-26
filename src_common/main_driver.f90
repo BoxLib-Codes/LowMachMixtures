@@ -13,6 +13,7 @@ subroutine main_driver()
   use define_bc_module
   use bc_module
   use multifab_physbc_module
+  use analyze_spectra_module
   use analysis_module
   use div_and_grad_module
   use eos_check_module
@@ -422,6 +423,22 @@ subroutine main_driver()
      
   end if
 
+
+
+  !=====================================================================
+  ! Initialize HydroGrid for analysis
+  !=====================================================================
+  if(stats_int>0) then
+     ! We will also pass temperature here but no additional scalars
+     call initialize_hydro_grid(mla,rho_old,dt,dx, &
+                                nspecies_in=nspecies, &
+                                nscal_in=0, &
+                                exclude_last_species_in=.false., &
+                                analyze_velocity=.true., &
+                                analyze_density=.true., &
+                                analyze_temperature=.true.) 
+  end if
+
   !=====================================================================
   ! Process initial conditions
   !=====================================================================
@@ -464,9 +481,9 @@ subroutine main_driver()
      end if
      
      ! print out projection (average) and variance)
-!     if (stats_int .gt. 0) then
-!        call print_stats(mla,dx,0,time,umac=umac,rho=rho_old,temperature=Temp)
-!     end if
+     if (stats_int .gt. 0) then
+        call print_stats(mla,dx,0,time,umac=umac,rho=rho_old,temperature=Temp)
+     end if
 
   end if
 
@@ -565,11 +582,11 @@ subroutine main_driver()
          end if
 
          ! print out projection (average) and variance
-!         if ( (stats_int > 0) .and. &
-!               (mod(istep,stats_int) .eq. 0) ) then
-!            ! Compute vertical and horizontal averages (hstat and vstat files)   
-!            call print_stats(mla,dx,istep,time,umac=umac,rho=rho_new,temperature=Temp)            
-!         end if
+         if ( (stats_int > 0) .and. &
+               (mod(istep,stats_int) .eq. 0) ) then
+            ! Compute vertical and horizontal averages (hstat and vstat files)   
+            call print_stats(mla,dx,istep,time,umac=umac,rho=rho_new,temperature=Temp)
+         end if
 
       end if
 
@@ -584,6 +601,10 @@ subroutine main_driver()
   !=======================================================
   ! Destroy multifabs and layouts
   !=======================================================
+
+  if(stats_int>0) then
+     call finalize_hydro_grid()
+  end if
 
   call destroy_mass_stochastic(mla)
   call destroy_m_stochastic(mla)
