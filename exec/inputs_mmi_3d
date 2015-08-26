@@ -6,8 +6,8 @@
   dim_in = 3                       ! 2D or 3D  
   prob_type =  3                   ! sets scalars, m, coefficients (see init.f90)
   prob_lo(1:3) = 0.d0 0.d0 0.d0    ! physical lo coordinate
-  prob_hi(1:3) = 0.8d0 0.8d0 0.025d0 ! physical hi coordinate
-  n_cells(1:3) = 256 256 8         ! number of cells in domain
+  prob_hi(1:3) = 0.4d0 0.4d0 0.025d0 ! physical hi coordinate
+  n_cells(1:3) = 128 128 8         ! number of cells in domain
   max_grid_size(1:3) = 32 32 8     ! max number of cells in a box
 
   fixed_dt = -1.d0                 ! time step
@@ -92,26 +92,12 @@
 !  bc_lo(1:3) = -1 100 100
 !  bc_hi(1:3) = -1 100 100
 
-  ! Control for analyze_spectra.90
-  !----------------------
-
-  hydro_grid_int = 10   ! How often to call updateHydroGrid
-                        ! 0 if never
-                        ! negative for projectHydroGrid custom analysis
-                        ! positive for updateHydroGrid
-
   project_dir = 1         ! Projection direction (1=x, 2=y, 3=z)
-  ! Meaning: 0=analyze 3D data only (no projection needed for HydroGrid, 
-  !          but still need projection if stats_int>0)
-  ! +dim=project along dim then analyze 2D only,
-  ! -dim=analyze 3D and then project along dim so we also analyze 2D data
-  ! It is better to use the conserved variables but it does not quite work for staggered
 
   max_grid_projection(1:2) = 32 32   ! parallelization parameters
   stats_int = 100                    ! Project grid for analysis
                                      ! If positive, how often to compute mean and 
                                      ! standard deviation over reduced dimensions
-  n_steps_save_stats = 100 ! How often to dump HydroGrid output files
   n_steps_skip = 0         ! How many steps to skip
   analyze_conserved = F    ! Should we use conserved variables for the analysis
                            ! (does not work well)

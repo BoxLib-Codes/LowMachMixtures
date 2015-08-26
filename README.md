@@ -29,14 +29,14 @@ and then do "make" to build the code.
 
 Example input files are provided in exec/test:
 
-- thermodiffusion
-- exec/test/inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [1]
-- MMI instability
-- exec/test/inputs_dlc_shadow_3d is the DLC instability example described in Section IV.C in Ref. [1].
+- inputs_thermodiffusion_2d is the thermodiffusion example described in Section III.C.3 in Ref. [1]
+- inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [1]
+- inputs_mmi_3d is the mixed-mode instability described in Section IV.B in Ref. [1]
+- inputs_dlc_shadow_3d is the DLC instability example described in Section IV.C in Ref. [1].
 
 These tests were originally performed with a previous (binary only) version of the code and have been roughly ported to the multispecies code:
 
--inputs_bubble_2d is similar to the lid-driven cavity test from 4.B in Ref. [2]
+-inputs_liddriven_2d is similar to the lid-driven cavity test from 4.B in Ref. [2]
 -inputs_square_2d is similar to the sharp interface square test from 4.C in Ref. [2]
 -inputs_khlm_3d/2d is similar to the Kelvin-Helmholtz problem from 4.D in Ref. [2]
 
