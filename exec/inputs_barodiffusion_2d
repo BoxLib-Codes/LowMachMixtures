@@ -110,25 +110,12 @@
   wallspeed_lo(1,1:2) = 0.d0 0.d0
   wallspeed_hi(1,1:2) = 0.d0 0.d0
 
-  ! Control for analyze_spectra.90 for calling HydroGrid
-  !----------------------
-  hydro_grid_int = 5    ! How often to call updateHydroGrid
-                        ! 0 if never
-                        ! negative for projectHydroGrid custom analysis
-                        ! positive for updateHydroGrid
-
   project_dir = 2         ! Projection direction (1=x, 2=y, 3=z)
-  ! Meaning: 0=analyze 3D data only (no projection needed for HydroGrid, 
-  !          but still need projection if stats_int>0)
-  ! +dim=project along dim then analyze 2D only,
-  ! -dim=analyze 3D and then project along dim so we also analyze 2D data
-  ! It is better to use the conserved variables but it does not quite work for staggered
 
   max_grid_projection(1:1) = 32  ! parallelization parameters
   stats_int = 100000              ! Project grid for analysis
                                  ! If positive, how often to compute mean and 
                                  ! standard deviation over reduced dimensions
-  n_steps_save_stats = -25000 ! How often to dump HydroGrid output files
   n_steps_skip = 200001        ! How many steps to skip
   analyze_conserved = F   ! Should we use conserved variables for the analysis
                           ! (does not work well)
@@ -246,135 +233,4 @@
   gmres_max_iter = 100  ! max number of gmres iterations
   gmres_min_iter = 1    ! min number of gmres iterations
 
-/
-
-! HydroGrid spectral and other analysis
-!---------------------------------------
-! The variables are numbered as:
-! 3D: 1=rho, 2-4=v, 5=T, 6 onward=rho_1-rho_n or w_1-w_n
-! 2D: 1=rho, 2-3=v, 4=T, 5 onward=rho_1-rho_n or w_1-w_n
-! Means file:
-! 1=y, 2=rho, 3-5=v, 6=T, 7+=rho's or w's in 3D
-! 1=y, 2=rho, 3-4=v, 5=T, 6+=rho's or w's in 2D
-! Variance file:
-! 1=y, 2=w1-w2, 3=w1-w3, 4=w2-w3
-! Structure factor numbering:
-! 1=w1-w2, 2=w1-w3, 3=w2-w3
-
-&hydroAnalysisOptions
-! 2D full grid data
-! NOT USED HERE sincr proj_dir>0!
-! NOTE: This namelist will be ignored if project_dir>0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   ! 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
-   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = F
-   subtractMeanFT = F ! The means are trivial here so no need to estimate them
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 0
-   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
-
-   ! Dynamic structure factors:
-   nWavenumbers=0
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers=""
-   nSavedSnapshots=100
-      
-   outputFolder = "."
-   filePrefix = "barodiff_2d_full"
-   axisToPrint = 1 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes
-
-/
-
-&hydroAnalysisOptions
-! 1D grid after vertical projection (corresponds to vstat files)
-! This is the IMPORTANT one here
-! NOTE: This namelist will be ignored if project_dir=0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   ! 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
-   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = F
-   subtractMeanFT = T ! The means are trivial here so no need to estimate them
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 4
-   ! numbering: 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w1-w2
-   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 5 0 6"
-
-   ! Dynamic structure factors:
-   nWavenumbers=8
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers="2 0, 4 0, 6 0, 8 0, 10 0, 12 0, 14 0, 16 0"
-   nSavedSnapshots=200
-      
-   outputFolder = "."
-   filePrefix = "barodiff_2d_vstat"
-   axisToPrint = 1 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes
-/
-
-&hydroAnalysisOptions
-! 1D grid after horizontal projection (corresponds to hstat files)
-! NOTE: This namelist will be ignored if project_dir=0
-
-   staggeredVelocities = 0 ! Are velocities on a staggered grid or not, (0, +1, or -1)*h/2
-   storeConserved = F ! We are not using conserved variables here due to staggering
-
-   ! Save the flow to a VTK file:
-   writeMeansVTK = F ! Save the means over the averaging interval
-   writeSnapshotVTK = F ! Save snapshots of the instantaneous fields
-
-   ! Variances
-   writeVariancesVTK = F ! Should we save a VTK file
-   nVariances = 0
-   ! 1=rho-rho, 2=w1-w1, 3=w2-w2, 4=w3-w3, 5=w1-w2, 6=w1-w3, 7=w2-w3
-   variancePairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
-      ! species1 variable1 species2 variable2
-
-   ! Static structure factors
-   writeSpectrumVTK = F
-   subtractMeanFT = F ! The means are trivial here so no need to estimate them
-   writeAbsValue = T ! Only write absolute values of complex values to VTK file?
-   writeTheory = -1 ! Write the theoretical prediction (-1=none, 0==continuum or 1=MAC)
-   nStructureFactors = 0
-   structureFactorPairs = "0 1 0 1, 0 5 0 5, 0 6 0 6, 0 7 0 7, 0 5 0 6, 0 5 0 7, 0 6 0 7"
-
-   ! Dynamic structure factors:
-   nWavenumbers=0
-   ! Shape (2,nWavenumbers):
-   selectedWavenumbers=""
-   nSavedSnapshots=100
-      
-   outputFolder = "."
-   filePrefix = "barodiff_2d_hstat"
-   axisToPrint = 2 ! 1=x, 2=y, 3=z axis
-   periodic = T ! Is the system periodic along the y axes
 /
