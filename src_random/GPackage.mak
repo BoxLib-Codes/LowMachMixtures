@@ -1,11 +1,15 @@
-include ../src_random/GPackageCommon.mak
-
+myf90sources += NURNGs.f90
 myf90sources += ParallelRNG.f90
+myf90sources += Precision.f90
+myf90sources += Random.f90
+myf90sources += RNG.f90
 
-ifeq ($(findstring bint, $(HOSTNAMEF)), bint)
-libraries += -L/usr/lib64/ -mkl # Dynamic FFTW
-else
-libraries += -L/usr/lib64/ -lfftw3 -lfftw3f -lm # Dynamic FFTW
-endif
-#libraries += ${HPC_LIBS_64}/static/libfftw3*.a -lm # Static (manual)
-#libraries += -Wl,-Bstatic -L/usr/lib64/ -lfftw3 -lfftw3f -Wl,-Bdynamic -lm # Static FFTW (using ld)
+# Note that the RNGs are already included in the Parallel version of BoxLib, but not fParallel
+# They are extracted here in C and made separate so there is no inconsistencies
+mycsources += RNGs.c
+
+# For fParallel-based codes:
+f90sources += $(myf90sources) 
+csources += $(mycsources)
+
+

@@ -30,9 +30,12 @@ and then do "make" to build the code.
 Example input files are provided in exec/test:
 
 ANDY: FINISH THIS LIST
+- nonideal diffusion
 - exec/test/inputs_dlc_shadow_3d is the DLC instability example described in Section IV.C in Ref. [1].
-- exec/test/inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [2]
-ANDY, WHERE IS THE THERMODIFFUSION?
+- MMI instability
+- exec/test/inputs_centrifuge_2d is the ultra-centrifuge barodiffusion example described in Section III.C.3 in Ref. [1]
+- thermodiffusion
+
 
 Caveats: 
 
