@@ -19,9 +19,7 @@ and the Stokes solver is described here (see doc/StokesPreconditioners.pdf):
 
 To compile the code, you need to also download the Fortran BoxLib library from
 https://github.com/BoxLib-Codes/BoxLib
-You will also need the LAPACK Fortran 90 interface. We package a copy of this in
-src_multiSpec/LAPACK95/
-and you can edit the Makefile there and build the Fortran 90 interface library. It is possible to run the code without LAPACK support since we also provide iterative procedures instead of dense linear algebra.
+You will also need the LAPACK Fortran 90 interface. We package a copy of this in src_lapack and you can edit the Makefile there and build the Fortran 90 interface library. It is possible to run the code without LAPACK support since we also provide iterative procedures instead of dense linear algebra.
 
 The executable codes are in the directory exec. Edit the makefile in
 exec/test/GNUMakefile
