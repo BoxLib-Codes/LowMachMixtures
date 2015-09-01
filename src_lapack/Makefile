@@ -17,6 +17,9 @@ FC1      = ifort
 else ifeq ($(findstring hopper, $(HOST)), hopper)
 FC       = ifort
 FC1      = ifort
+else ifeq ($(findstring cims.nyu.edu, $(HOST)), cims.nyu.edu)
+FC       = gfortran49 -ffree-form
+FC1      = gfortran49 -ffixed-form
 else
 FC       = gfortran -ffree-form
 FC1      = gfortran -ffixed-form
